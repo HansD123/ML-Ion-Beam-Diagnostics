@@ -35,16 +35,16 @@ This project explores the application of machine learning, specifically convolut
 - **Classifier Network**: Developed a CNN to classify images based on how accurately the regression CNN is expected to predict beam parameters for each image
 
 ## How to Use Code
-- **Dockerfile** Dockerfile for installing BDSIM/Geant 4/Python on Linux machine to use for simulations (ie on HPC)
-- **src/bdsim** Stores logic for BDSIM simulator
-- **src/custom** stores logic for custom Python simulation
-- **src/bdsim_generate** script to generate bdsim simulation images
-- **src/bdsim_op** script to perform bayesian optimisation (optuna) for BDSIM simulations
-- **src/custom_electron_op** script to perform bayesian optimisation (optuna) for custom Python simulations with electron filters
-- **src/custom_generate** script to generate custom Python simulation images
-- **src/custom_op** script to perform bayesian optimisation (optuna) for custom Python simulations
-- **src/custom_proton_op** script to perform bayesian optimisation (optuna) for custom Python simulations with proton filters
-- **src/ml** trains NN of set of images
+- **Dockerfile**: Dockerfile for installing BDSIM/Geant 4/Python on Linux machine to use for simulations (ie on HPC)
+- **src/bdsim**: Stores logic for BDSIM simulator
+- **src/custom**: stores logic for custom Python simulation
+- **src/bdsim_generate**: script to generate bdsim simulation images
+- **src/bdsim_op**: script to perform bayesian optimisation (optuna) for BDSIM simulations
+- **src/custom_electron_op**: script to perform bayesian optimisation (optuna) for custom Python simulations with electron filters
+- **src/custom_generate**: script to generate custom Python simulation images
+- **src/custom_op**: script to perform bayesian optimisation (optuna) for custom Python simulations
+- **src/custom_proton_op**: script to perform bayesian optimisation (optuna) for custom Python simulations with proton filters
+- **src/ml**: trains NN of set of images
 
 ## Conclusion
 The project demonstrates the potential of machine learning to significantly improve the speed and accuracy of diagnostics in laser-driven ion beam systems. The optimised CNN model shows promising results for real-time applications, paving the way for further research and development, particularly with regard to the use of Bayesian optimisation to optimise filter parameters.
