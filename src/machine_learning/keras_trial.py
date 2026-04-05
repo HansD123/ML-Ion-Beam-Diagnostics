@@ -1,3 +1,4 @@
+from typing import Any, Optional, Tuple
 import numpy as np
 import keras
 
@@ -9,10 +10,10 @@ def ml_trial(
     y_test: np.ndarray,
     batch_size: int,
     max_epochs: int,
-    patience: int = None,
+    patience: Optional[int] = None,
     loss: str = "mean_squared_error",
     out_activation: str = "linear",
-) -> tuple:
+) -> Tuple[float, Any]:
     """Uses Keras to train on batches of images."""
 
     x_train = x_train.reshape(-1, x_train.shape[1], x_train.shape[2], 1)

@@ -1,3 +1,4 @@
+from typing import Tuple
 import numpy as np
 
 import torch
@@ -11,27 +12,27 @@ from tqdm import tqdm
 class Net(nn.Module):
     """Simple CNN that takes batches of n x n images as inputs."""
 
-    def __init__(self, image_width: int, n_outputs: int):
-        self.image_width = image_width
+    def __init__(self, image_width: int, n_outputs: int) -> None:
+        self.image_width: int = image_width
         width_after_conv = (((image_width - 2) // 2) - 2) // 2
 
         super().__init__()
         # Convolutional layers
-        self.conv1 = nn.Conv2d(
+        self.conv1: nn.Conv2d = nn.Conv2d(
             in_channels=1, out_channels=32, kernel_size=3, stride=1, padding=0
         )
-        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-        self.conv2 = nn.Conv2d(
+        self.pool1: nn.MaxPool2d = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+        self.conv2: nn.Conv2d = nn.Conv2d(
             in_channels=32, out_channels=32, kernel_size=3, stride=1, padding=0
         )
-        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+        self.pool2: nn.MaxPool2d = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
 
         # Fully connected layers
-        self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(32 * width_after_conv**2, 64)
-        self.fc2 = nn.Linear(64, n_outputs)
+        self.flatten: nn.Flatten = nn.Flatten()
+        self.fc1: nn.Linear = nn.Linear(32 * width_after_conv**2, 64)
+        self.fc2: nn.Linear = nn.Linear(64, n_outputs)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = torch.tensor(x)
         x = x.view(-1, 1, self.image_width, self.image_width)
 
@@ -53,7 +54,7 @@ def ml_trial(
     y_train: np.ndarray,
     x_test: np.ndarray,
     y_test: np.ndarray,
-) -> tuple:
+) -> Tuple[torch.Tensor, "Net"]:
     """Trains on batches of 30x30 input images. Handles any sized labels."""
     MAX_EPOCHS = 1000
     BATCH_SIZE = 32
@@ -96,7 +97,7 @@ def ml_trial(
         print(f"Val. Loss: {val_loss.item()}")
         print("")
 
-        # Early stopping if the validation loss has not improved in the last 10 epochs
+        # Early stopping if the validation loss has not improved in the last 15 epochs
         if len(previous_val_losses) == 0 or val_loss < min(previous_val_losses):
             best_model_state = copy.deepcopy(model.state_dict())
             best_epoch = current_epoch
@@ -104,7 +105,7 @@ def ml_trial(
         else:
             previous_val_losses.append(val_loss)
 
-        if len(previous_val_losses) > 10:
+        if len(previous_val_losses) > 15:
             print(f"Early Stopping: Restoring parameters from epoch {best_epoch}")
             model.load_state_dict(best_model_state)
             break

@@ -11,10 +11,10 @@ class DynamicMinMaxScaler:
     Based off sklearn MinMaxScaler but dynamically handles batches of 2x2 matrices.
     """
 
-    def __init__(self):
-        self.scaler = MinMaxScaler()
+    def __init__(self) -> None:
+        self.scaler: MinMaxScaler = MinMaxScaler()
 
-    def fit_transform(self, images: np.ndarray):
+    def fit_transform(self, images: np.ndarray) -> np.ndarray:
         """Normalises the images to between 0 and 1."""
         flat_size = self.get_flat_size(images)
 
@@ -23,7 +23,7 @@ class DynamicMinMaxScaler:
         norm_images = norm_flat_images.reshape(-1, *images.shape[1:])
         return norm_images
 
-    def inverse_transform(self, images: np.ndarray):
+    def inverse_transform(self, images: np.ndarray) -> np.ndarray:
         """Inverse transforms the images to redeem their original magnitude."""
         flat_size = self.get_flat_size(images)
 
@@ -32,7 +32,7 @@ class DynamicMinMaxScaler:
         restored_images = norm_restored_images.reshape(-1, *images.shape[1:])
         return restored_images
 
-    def get_flat_size(self, images: np.ndarray):
+    def get_flat_size(self, images: np.ndarray) -> int:
         """Determines the flat size of the image."""
         flat_size = 1
         for i in range(1, len(images.shape)):
@@ -40,7 +40,7 @@ class DynamicMinMaxScaler:
         return flat_size
 
 
-def rolling_windows(thicknesses, window_size, step_size, num_windows) -> List[List]:
+def rolling_windows(thicknesses: List[float], window_size: int, step_size: int, num_windows: int) -> List[List[float]]:
 
     # Check that it is possible
     if window_size + (num_windows - 1) * step_size != len(thicknesses):
@@ -53,7 +53,7 @@ def rolling_windows(thicknesses, window_size, step_size, num_windows) -> List[Li
     return arr
 
 
-def round_to_closest(source_list: list, target_list: list) -> list:
+def round_to_closest(source_list: List[float], target_list: List[float]) -> List[float]:
     """
     Rounds each number in source_list to the closest number in target_list.
     """
@@ -64,7 +64,7 @@ def round_to_closest(source_list: list, target_list: list) -> list:
     return rounded_list
 
 
-def exponential_dist(a: float, b: float, input: float) -> float:
+def exponential_dist(a: float, b: float, input: float | np.ndarray) -> float | np.ndarray:
     return a * b**input
 
 
@@ -89,7 +89,7 @@ def set_lower_bnd(arr: np.ndarray, lower_bnd: float) -> np.ndarray:
     return np.array(out)
 
 
-def create_output_dirs():
+def create_output_dirs() -> None:
     """
     Creates a directory structure in the root of the project for storing job related
     files such as labels, neural networks, optuna studies and synthetic images:

@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from copy import deepcopy
-from typing import List
+from typing import List, Tuple
 
 
 # Functions
-def scale_matrix_dimensions(matrix: List[List], scale_factor: int) -> List[List]:
+def scale_matrix_dimensions(matrix: List[List[float]], scale_factor: int) -> List[List[float]]:
     """
     Scales a matrix uniformly by an integer scale factor. Scaled in both the x
     and y direction by the same factor.
@@ -19,7 +19,7 @@ def scale_matrix_dimensions(matrix: List[List], scale_factor: int) -> List[List]
     return scaled_matrix
 
 
-def repeat_units_xy(matrix: List[List], x_units: int, y_units: int) -> List[List]:
+def repeat_units_xy(matrix: List[List[float]], x_units: int, y_units: int) -> List[List[float]]:
     """Repeats the units of a matrix in the x and y direction."""
     repeated_rows = [row * x_units for row in matrix]
     repeated_matrix = repeated_rows * y_units
@@ -35,8 +35,8 @@ class Filter:
         self,
         base_unit: List[List],
         repeat_unit_size: int,
-        repeat_unit_dimensions: tuple,
-    ):
+        repeat_unit_dimensions: Tuple[int, int],
+    ) -> None:
         """
         base_unit: Square shape list containing thicknesses of a repeat unit.
         repeat_unit_size: The size of the base units width and height.
@@ -47,7 +47,7 @@ class Filter:
             raise RuntimeError("Repeat unit width and height must be the same.")
 
         # Obtain a map from filter number to thickness
-        self.map = {}
+        self.map: dict[int, float] = {}
         filter_no = 1
         for i in range(len(base_unit)):
             for j in range(len(base_unit)):
@@ -70,9 +70,9 @@ class Filter:
             self.repeat_unit, repeat_unit_dimensions[1], repeat_unit_dimensions[0]
         )
 
-        self.dimensions = (len(self.filter), len(self.filter[0]))
+        self.dimensions: Tuple[int, int] = (len(self.filter), len(self.filter[0]))
 
-    def display(self):
+    def display(self) -> None:
         """Method for visualising the filter and its pixel dimensions."""
         thickness_filter = [
             [self.map[element] for element in row] for row in self.filter
