@@ -26,7 +26,7 @@ predicted_labels_filename = "predicted_labels.pickle"
 predicted_labels_path = f"{output_labels_dir}/{predicted_labels_filename}"
 
 
-def main():
+def main() -> None:
     utils.create_output_dirs()
 
     # Reading images and labels

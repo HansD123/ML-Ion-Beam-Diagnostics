@@ -15,7 +15,7 @@ output_filename = "bdsim_images_labels.pickle"
 output_path = f"{output_dir}/{output_filename}"
 
 
-def main():
+def main() -> None:
     utils.create_output_dirs()
     if not os.path.isdir(output_dir):
         raise Exception(f"{output_dir} directory is not found")

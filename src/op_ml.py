@@ -4,6 +4,7 @@ Script that carries out Bayesian optimisation of NN hyperparameters.
 WARNING: THIS SCRIPT IS CURRENTLY INCOMPATIBLE WITH THE REST OF THE CODEBASE
 """
 
+from typing import Any, Dict, Tuple
 import numpy as np
 import tensorflow as tf
 import optuna
@@ -19,10 +20,10 @@ study_name = "study-16-03-24"
 timeout = 22 * 60 * 60
 
 
-def machine_learn(trial, images, labels):
+def machine_learn(trial: optuna.Trial, images: np.ndarray, labels: np.ndarray) -> Tuple[float, Any]:
     """Hyperparameter optimisation of a Keras model."""
     # Suggesting hyperparameters
-    conv_1_weights = trial.suggest_int("conv_1_weights", 1, 128)
+    conv_1_weights = trial.suggest_categorical("conv_1_weights", [16, 32, 64, 128])
     conv_1_kernel = trial.suggest_categorical("conv_1_kernel", [1, 3, 5])
     pool_1_kernel = trial.suggest_categorical("pool_1_kernel", [2, 3])
     n_conv_layers = trial.suggest_int("n_conv_layers", 1, 3)
@@ -44,7 +45,7 @@ def machine_learn(trial, images, labels):
             tf.keras.layers.MaxPooling2D(pool_size=(pool_1_kernel, pool_1_kernel))
         )
         for i in range(1, n_conv_layers):
-            n_weights = trial.suggest_int(f"conv_{i+1}_weights", 1, 128)
+            n_weights = trial.suggest_categorical(f"conv_{i+1}_weights", [16, 32, 64, 128])
             conv_kernel_size = trial.suggest_categorical(
                 f"conv_{i+1}_kernel", [1, 3, 5]
             )
@@ -67,7 +68,7 @@ def machine_learn(trial, images, labels):
         model.add(tf.keras.layers.Flatten())
 
         for i in range(0, n_dense_layers - 1):
-            n_weights = trial.suggest_int(f"dense_{i+1}_weights", 1, 256)
+            n_weights = trial.suggest_categorical(f"dense_{i+1}_weights", [32, 64, 128, 256])
             model.add(tf.keras.layers.Dense(n_weights, activation="relu"))
 
         # Output layer with 3 neurons for the 3 outputs
@@ -102,7 +103,7 @@ def machine_learn(trial, images, labels):
         return 1000, None
 
 
-def objective(trial, images, labels, best_attributes):
+def objective(trial: optuna.Trial, images: np.ndarray, labels: np.ndarray, best_attributes: Dict[str, Any]) -> float:
     # Tracking best trial attributes
     best_loss = None
 
@@ -117,7 +118,7 @@ def objective(trial, images, labels, best_attributes):
     return loss
 
 
-def main():
+def main() -> None:
     # Reading and normalising the data
     with open(data_path, "rb") as file:
         images_and_labels = pickle.load(file)
