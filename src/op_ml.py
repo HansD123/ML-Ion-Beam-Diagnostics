@@ -1,148 +1,135 @@
 """
 Script that carries out Bayesian optimisation of NN hyperparameters.
-
-WARNING: THIS SCRIPT IS CURRENTLY INCOMPATIBLE WITH THE REST OF THE CODEBASE
 """
 
+import os
 from typing import Any, Dict, Tuple
 import numpy as np
 import tensorflow as tf
 import optuna
 import pickle
 
-from src.data_gen_new.utils import normalise
-from utils import calibrate_images
+from machine_learning.keras_trial import ml_trial
+from utils import calibrate_images, create_output_dirs, DynamicMinMaxScaler
+
 
 data_path = "data/images-optimal-uncalibrated.pickle"
-best_model_path = "output/best_model.keras"
-study_db_path = "output/op_ml.db"
+best_model_path = "output/nn_models/hyperparam_opt_model.keras"
+study_db_path = "output/optuna_studies/hyperparam_opt.db"
 study_name = "study-16-03-24"
 timeout = 22 * 60 * 60
 
+def load_and_prepare_data() -> Tuple[np.ndarray, np.ndarray]:
+    # Reading and normalising the data
+    with open(data_path, "rb") as file:
+        images_and_labels = pickle.load(file)
 
-def machine_learn(trial: optuna.Trial, images: np.ndarray, labels: np.ndarray) -> Tuple[float, Any]:
-    """Hyperparameter optimisation of a Keras model."""
-    # Suggesting hyperparameters
-    conv_1_weights = trial.suggest_categorical("conv_1_weights", [16, 32, 64, 128])
-    conv_1_kernel = trial.suggest_categorical("conv_1_kernel", [1, 3, 5])
-    pool_1_kernel = trial.suggest_categorical("pool_1_kernel", [2, 3])
-    n_conv_layers = trial.suggest_int("n_conv_layers", 1, 3)
+    images = calibrate_images(images_and_labels["images"], 4096)
+    labels = images_and_labels["labels"]
 
-    n_dense_layers = trial.suggest_int("n_dense_layers", 1, 3)
-    try:
-        model = tf.keras.Sequential()
-        # Keeping the model architecture similar but adjusting the input shape
-        n_rows, n_columns = images[0].shape
-        model.add(
-            tf.keras.layers.Conv2D(
-                conv_1_weights,
-                (conv_1_kernel, conv_1_kernel),
-                activation="relu",
-                input_shape=(n_rows, n_columns, 1),
-            )
+    images_scaler = DynamicMinMaxScaler()
+    labels_scaler = DynamicMinMaxScaler()
+
+    norm_images = images_scaler.fit_transform(images)
+    norm_labels = labels_scaler.fit_transform(labels)
+
+    return norm_images, norm_labels
+
+
+def suggest_hyperparameters(trial: optuna.Trial) -> Dict[str, Any]:
+    params = {
+        "n_conv_layers": trial.suggest_int("n_conv_layers", 1, 3),
+        "n_dense_layers": trial.suggest_int("n_dense_layers", 1, 3),
+        "batch_size": trial.suggest_categorical("batch_size", [16, 32, 64]),
+        "learning_rate": trial.suggest_float("learning_rate", 1e-4, 1e-2, log=True),
+    }
+
+    for i in range(params["n_conv_layers"]):
+        params[f"conv_{i+1}_filters"] = trial.suggest_categorical(
+            f"conv_{i+1}_filters", [16, 32, 64, 128]
         )
-        model.add(
-            tf.keras.layers.MaxPooling2D(pool_size=(pool_1_kernel, pool_1_kernel))
+        params[f"conv_{i+1}_kernel"] = trial.suggest_categorical(
+            f"conv_{i+1}_kernel", [1, 3, 5]
         )
-        for i in range(1, n_conv_layers):
-            n_weights = trial.suggest_categorical(f"conv_{i+1}_weights", [16, 32, 64, 128])
-            conv_kernel_size = trial.suggest_categorical(
-                f"conv_{i+1}_kernel", [1, 3, 5]
-            )
-            pool_kernel_size = trial.suggest_categorical(f"pool_{i+1}_kernel", [2, 3])
-
-            model.add(
-                tf.keras.layers.Conv2D(
-                    n_weights,
-                    (conv_kernel_size, conv_kernel_size),
-                    activation="relu",
-                    input_shape=(n_rows, n_columns, 1),
-                )
-            )
-            model.add(
-                tf.keras.layers.MaxPooling2D(
-                    pool_size=(pool_kernel_size, pool_kernel_size)
-                )
-            )
-
-        model.add(tf.keras.layers.Flatten())
-
-        for i in range(0, n_dense_layers - 1):
-            n_weights = trial.suggest_categorical(f"dense_{i+1}_weights", [32, 64, 128, 256])
-            model.add(tf.keras.layers.Dense(n_weights, activation="relu"))
-
-        # Output layer with 3 neurons for the 3 outputs
-        model.add(tf.keras.layers.Dense(3, activation="linear"))
-
-        model.compile(optimizer="adam", loss="mean_squared_error")
-
-        early_stopping = tf.keras.callbacks.EarlyStopping(
-            monitor="val_loss",
-            patience=5,  # Number of epochs with no improvement after which training will be stopped
-            verbose=1,
-            mode="min",
-            restore_best_weights=True,
-        )
-        info = model.fit(
-            images,
-            labels,
-            validation_split=0.25,
-            shuffle=True,
-            batch_size=32,
-            epochs=1000,
-            verbose=True,
-            callbacks=[early_stopping],
+        params[f"pool_{i+1}_kernel"] = trial.suggest_categorical(
+            f"pool_{i+1}_kernel", [2, 3]
         )
 
-        loss = info.history["val_loss"][-1]
-        return loss, model
+    for i in range(params["n_dense_layers"] - 1):
+        params[f"dense_{i+1}_units"] = trial.suggest_categorical(
+            f"dense_{i+1}_units", [32, 64, 128, 256]
+        )
 
-    except Exception as e:
-        # Handle the failure case or log the error
-        print(f"An error occurred: {e}")
-        return 1000, None
+    return params
 
 
-def objective(trial: optuna.Trial, images: np.ndarray, labels: np.ndarray, best_attributes: Dict[str, Any]) -> float:
-    # Tracking best trial attributes
-    best_loss = None
+def objective(trial: optuna.Trial, data) -> float:
+    images, labels = data
 
-    # Training Model
-    loss, model = machine_learn(trial, images, labels)
+    n_train = (len(images) * 3) // 4
+    train_images = images[:n_train]
+    train_labels = labels[:n_train]
+    val_images = images[n_train:]
+    val_labels = labels[n_train:]
 
-    # Updating if this is a new best trial
-    if best_loss is None or loss < best_loss:
-        best_loss = loss
-        best_attributes["model"] = model
+    params = suggest_hyperparameters(trial)
+
+    loss, model = ml_trial(
+        train_images,
+        train_labels,
+        val_images,
+        val_labels,
+        batch_size=params["batch_size"],
+        max_epochs=1000,
+        patience=10,
+        hyperparams=params,
+    )
+
+    trial.set_user_attr("params", params)
 
     return loss
 
 
 def main() -> None:
-    # Reading and normalising the data
-    with open(data_path, "rb") as file:
-        images_and_labels = pickle.load(file)
+    create_output_dirs()
 
-    unnormalised_images = calibrate_images(images_and_labels["images"], 4096)
-    unnormalised_labels = images_and_labels["labels"]
+    if os.path.exists(study_db_path):
+        os.remove(study_db_path)
 
-    images, labels, denormaliser = normalise(
-        np.array(unnormalised_images), np.array(unnormalised_labels)
-    )
+    images, labels = load_and_prepare_data()
 
-    # Creating an Optuna study
     study = optuna.create_study(
         direction="minimize",
         study_name=study_name,
         storage=f"sqlite:///{study_db_path}",
     )
-    best_attributes = {"images_and_labels": None, "model": None}
+
     study.optimize(
-        lambda trial: objective(trial, images, labels, best_attributes), timeout=timeout
+        lambda trial: objective(trial, (images, labels)),
+        timeout=timeout,
     )
 
-    # Saving the best model
-    best_attributes["model"].save(best_model_path)
+    best_trial = study.best_trial
+
+    print("Best loss:", best_trial.value)
+    print("Best params:", best_trial.params)
+
+    _, best_model = ml_trial(
+        images,
+        labels,
+        images,  
+        labels,
+        batch_size=best_trial.params["batch_size"],
+        max_epochs=1000,
+        patience=10,
+        hyperparams=best_trial.params,
+    )
+
+    best_model.save(best_model_path)
+
+    with open("output/best_hyperparameters.pickle", "wb") as f:
+        pickle.dump(best_trial.params, f)
+
 
 
 if __name__ == "__main__":
