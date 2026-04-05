@@ -33,7 +33,7 @@ def ml_trial(
 
     # Flatten the output of the conv layers to feed into the dense layer
     model.add(keras.layers.Flatten())
-    model.add(keras.layers.Dense(64, activation="sigmoid"))
+    model.add(keras.layers.Dense(64, activation="relu"))
     model.add(keras.layers.Dense(y_train.shape[1], activation=out_activation))
     model.compile(optimizer="adam", loss=loss)
 
