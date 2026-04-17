@@ -28,19 +28,19 @@ def main() -> None:
     N_PARTICLES_BOUNDS = (1e7, 1e10)
     N_MACROPARTICLES = int(1e5)
     MAX_PIXEL = 4095
-    ADD_ELECTRONS = True
+    ADD_ELECTRONS = False
 
     # Filter
     BASE_UNIT = [
-        [0.004758472174937324, 0.0037335975777684615, 0.003641319252854112],
-        [0.0034866912858844638, 0.002903644369313124, 0.0025435081569248875],
-        [0.0006230103002935051, 0.0002645738586726377, 1e-07],
+        [85.4e-6, 40.1e-6, 18.8e-6],
+        [8.9e-6,  4.2e-6,  2.0e-6],
+        [0.9e-6,  0.4e-6,  0.2e-6],
     ]
     filter = fil.Filter(BASE_UNIT, 10, (1, 1))
 
     # Generating the data
-    N_IMAGES = 30000
-    N_WORKERS = 125
+    N_IMAGES = 5000
+    N_WORKERS = 8
     output = dg.gen_many_parallel(
         E_MAX_BOUNDS,
         T_P_BOUNDS,

@@ -10,7 +10,7 @@ import utils
 from machine_learning.keras_trial import ml_trial
 
 # Input data path
-input_path = "../data/50Kelectrons.pickle"
+input_path = "../output/synthetic_images/custom_images_labels.pickle"
 
 # Output data paths
 output_model_dir = "../output/nn_models"
@@ -57,7 +57,7 @@ def main() -> None:
 
     # Training Model
     BATCH_SIZE = 32
-    MAX_EPOCHS = 10
+    MAX_EPOCHS = 10000
     PATIENCE = 15
     val_loss, model = ml_trial(
         train_images,
