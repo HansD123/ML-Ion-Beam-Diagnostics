@@ -1,51 +1,82 @@
+# Bayesian optimised design of a differentially filtered particle diagnostic for laser-driven ion sources
 
-# Machine Learning Guided Diagnostics for Laser-Driven Ion Beams
+Code accompanying the paper: *Bayesian optimised design of differentially filtered spatial and spectral particle diagnostic for laser-driven ion source* — Deol, Truslove, Hussain, Najmudin, Dover.
 
-Link to report: https://github.com/arantruslove/ML-Ion-Beam-Diagnostics/blob/main/Aran_Truslove_ML_Diagnostics_Report.pdf
+The goal is to find the optimal set of filter thicknesses for a PROBIES diagnostic. The optimiser iterates over candidate filter configurations, generates synthetic scintillator images for each, trains a CNN to predict beam parameters from those images, and uses the validation loss to guide the next set of candidates. The final filter configuration is the one that gives the lowest validation loss across all trials.
 
-## Overview
-This project explores the application of machine learning, specifically convolutional neural networks (CNNs), to rapidly diagnose key parameters of laser-driven ion beams. By using synthetic data generation and Bayesian optimization, the project aims to predict three essential beam parameters: maximum proton energy (Emax), proton spectra temperature (Tp), and the number of protons in the beam (N0). The developed methods are intended to improve the efficiency and accuracy of beam diagnostics in advanced laser-driven ion acceleration systems.
+---
 
-## Project Objectives
-- **Synthetic Data Generation:** Develop a Monte Carlo simulation to generate synthetic images of proton beams passing through a 3x3 grid of aluminium filters and a scintillator.
-- **Neural Network Training:** Train a CNN on the synthetic dataset to predict beam parameters from CCD-captured images.
-- **Bayesian Optimization:** Optimise both the filter thicknesses used in the data generation process and the architecture of the CNN to enhance prediction accuracy.
+## Setup
 
-## Methodology
-1. **Data Generation:** 
-   - Simulated 100,000 synthetic images using a model that accounts for proton energy distributions and energy deposition in filters and scintillators.
-   - Applied Gaussian noise and normalization techniques to mimic real-world data collection.
+The code is designed to run inside a Docker container that provides BDSIM/Geant4 and Python 3.12. Build the image with:
 
-2. **Neural Network:**
-   - Implemented a CNN using Keras, optimised through mean-squared error loss minimization.
-   - Trained on 75,000 images and validated on 25,000 images.
+```bash
+docker build -t ml-ion-beam .
+```
 
-3. **Bayesian Optimization:**
-   - Used Optuna to optimise filter thickness configurations and CNN architectural parameters, improving model accuracy significantly.
+The container is based on `jairhul/centos7-geant4v10.7.2.3-jai-environment` (CentOS 7 + Geant4 v10.7.2.3 + BDSIM). Python packages are installed from `requirements.txt` at build time.
 
-## Results
-- **Performance Improvements:** Bayesian optimization led to a 40% reduction in prediction error when optimizing filter thicknesses and an additional 10% improvement when optimizing the CNN architecture.
-- **Prediction Accuracy:** The optimised CNN achieved mean relative absolute errors (MRAE) of 7% for Emax, 13% for Tp, and 4% for N0.
-- **Speed:** The optimised CNN's prediction time averaged 7.3 ms, making it suitable for real-time applications in high-frequency laser systems.
+---
 
-## UROP Work
-- **BDSIM:** Integrated BDSIM, a wrapper for Geant4, to produce highly reliable and accurate simulations of the passage of ions through materials.
-- **Electrons**: Modelled the addition of electrons in both the custom Python and BDSIM simulations.
-- **Containerisation**: Implemented Docker along with Apptainer to allow the BDSIM integrated code to operate seamlessly on different platforms including on HPC clusters.
-- **Classifier Network**: Developed a CNN to classify images based on how accurately the regression CNN is expected to predict beam parameters for each image
+## Workflow
 
-## How to Use Code
-- **Dockerfile**: Dockerfile for installing BDSIM/Geant 4/Python on Linux machine to use for simulations (ie on HPC)
-- **src/bdsim**: Stores logic for BDSIM simulator
-- **src/custom**: stores logic for custom Python simulation
-- **src/machine_learning** stores underlying optimisation scripts for Bayesian/ NN training
-- **src/bdsim_generate**: script to generate bdsim simulation images
-- **src/bdsim_op**: script to perform bayesian optimisation (optuna) for BDSIM simulations
-- **src/custom_electron_op**: script to perform bayesian optimisation (optuna) for custom Python simulations with electron filters
-- **src/custom_generate**: script to generate custom Python simulation images
-- **src/custom_op**: script to perform bayesian optimisation (optuna) for custom Python simulations
-- **src/custom_proton_op**: script to perform bayesian optimisation (optuna) for custom Python simulations with proton filters
-- **src/ml**: trains NN on set of images
+There are two simulation backends: a fast custom Python implementation and a high-fidelity BDSIM/Geant4 implementation. The custom version is faster but ignores scattering; BDSIM is slower but physically accurate and was used for final results in the paper.
 
-## Conclusion
-The project demonstrates the potential of machine learning to significantly improve the speed and accuracy of diagnostics in laser-driven ion beam systems. The optimised CNN model shows promising results for real-time applications, paving the way for further research and development, particularly with regard to the use of Bayesian optimisation to optimise filter parameters.
+### 1. Generate synthetic images
+
+```bash
+python src/custom_generate.py   # fast, for development
+python src/bdsim_generate.py    # high-fidelity, for final results
+```
+
+Images are saved to `output/synthetic_images/` as pickle files.
+
+### 2. Run Bayesian optimisation
+
+Each script below runs Optuna over many trials, training a CNN per trial and saving the best filter configuration and model. Filter thicknesses are distributed as an exponential function `tf(n) = a*b^n`, where `a` and `b` are the parameters searched by Optuna.
+
+| Script | Description |
+|---|---|
+| `src/custom_electron_op.py` | Optimise 3 electron filters with 6 proton filters fixed |
+| `src/custom_proton_op.py` | Optimise 6 proton filters with 3 electron filters fixed |
+
+The two scripts are run in sequence: first `custom_electron_op.py`, then `custom_proton_op.py` with the resulting electron filter thicknesses fixed.
+
+```bash
+python src/custom_electron_op.py
+python src/custom_proton_op.py
+```
+
+Optuna studies are stored in `output/optuna_studies/` as SQLite databases, which can be inspected with the Optuna dashboard:
+
+```bash
+optuna-dashboard sqlite:///output/optuna_studies/new_custom_op_electrons_filters_jan18.db
+```
+
+### 3. Train final model
+
+Once the optimal filter configuration is known, train a larger final CNN on a bigger dataset:
+
+```bash
+python src/ml.py
+```
+
+This reads from `data/` and writes the trained model and label predictions to `output/`.
+
+---
+
+## Repository structure
+
+```
+src/
+├── bdsim/              # BDSIM simulation wrapper and utilities
+├── custom/             # Custom Python simulation (no scattering)
+│   └── splines/        # Stopping power tables for Al (protons + electrons)
+├── machine_learning/   # CNN architecture and training loop
+├── analysis/           # Post-hoc analysis of results
+├── custom_electron_op.py  # Optimise 3 electron filters
+├── custom_proton_op.py    # Optimise 6 proton filters
+├── *_generate.py          # Image generation entry points
+└── ml.py                  # Final model training
+output/                 # Generated at runtime (models, images, studies)
+```
