@@ -24,7 +24,7 @@ class TestSplines:
     protons/electrons pass through through the aluminium/splin.
     """
 
-    def test_energy_after_al(self):
+    def test_energy_after_al(self) -> None:
         """Proton energy after passing through aluminium."""
         INITIAL_ENERGY = 3  # MeV
         THICKNESS = 1e-3  # m
@@ -34,7 +34,7 @@ class TestSplines:
         assert energy_after >= 0
         assert type(energy_after) == float
 
-    def test_energy_after_al_electron(self):
+    def test_energy_after_al_electron(self) -> None:
         """Electron energy after passing through aluminium."""
         INITIAL_ENERGY = 3  # MeV
         THICKNESS = 1e-3  # m
@@ -44,7 +44,7 @@ class TestSplines:
         assert energy_after >= 0
         assert type(energy_after) == float
 
-    def test_energy_deposited(self):
+    def test_energy_deposited(self) -> None:
         """Proton energy deposited in the scintillator."""
         INITIAL_ENERGY = 3  # MeV
 
@@ -52,7 +52,7 @@ class TestSplines:
 
         assert energy_after >= 0
 
-    def test_energy_deposited_electron(self):
+    def test_energy_deposited_electron(self) -> None:
         """Electron energy deposited in the scintillator."""
         INITIAL_ENERGY = 5  # MeV
 
@@ -64,7 +64,7 @@ class TestSplines:
 class TestParameterGeneration:
     """Tests the generation of beam parameters for both protons and electrons."""
 
-    def test_gen_params(self):
+    def test_gen_params(self) -> None:
         """Protons"""
         E_MAX_BOUNDS = (0.1, 5)  # MeV
         T_P_BOUNDS = (0.05, 2)  # MeV
@@ -76,7 +76,7 @@ class TestParameterGeneration:
         assert T_P_BOUNDS[0] <= t_p <= T_P_BOUNDS[1]
         assert N_PARTICLES_BOUNDS[0] <= n_0 <= N_PARTICLES_BOUNDS[1]
 
-    def test_gen_electron_params(self):
+    def test_gen_electron_params(self) -> None:
         """Electrons"""
         E_MAX_BOUNDS = (0.1, 5)
         T_P_BOUNDS = (0.05, 2)
@@ -90,7 +90,7 @@ class TestParameterGeneration:
 class TestGenEnergies:
     """Tests the generation of a list of energies for both protons and electrons."""
 
-    def test_gen_energies(self):
+    def test_gen_energies(self) -> None:
         """Protons"""
         E_MAX = 1.0
         T_P = 1.0
@@ -101,7 +101,7 @@ class TestGenEnergies:
         assert max(proton_energy_list) <= E_MAX
         assert min(proton_energy_list) >= 0
 
-    def test_gen_energies_electrons(self):
+    def test_gen_energies_electrons(self) -> None:
         """Electrons"""
         T_P = 1.0
         N_MACROPARTICLES = 10**5
@@ -118,7 +118,7 @@ class TestGenEnergyLists:
     electron lists.
     """
 
-    def test_gen_energies_list(self):
+    def test_gen_energies_list(self) -> None:
         E_MAX = 1.0
         T_P = 1.0
         N_MACROPARTICLES = 10**5
@@ -128,7 +128,7 @@ class TestGenEnergyLists:
         assert len(proton_energy_list) == N_FILTERS
         assert sum(len(sublist) for sublist in proton_energy_list) == N_MACROPARTICLES
 
-    def test_gen_energies_electrons_list(self):
+    def test_gen_energies_electrons_list(self) -> None:
         T_P = 1.0
         N_MACROPARTICLES = 10**5
         N_FILTERS = 9
@@ -143,7 +143,7 @@ class TestGenEnergyLists:
 class TestDataGeneration:
     """Tests functions associated with synthetic image generation."""
 
-    def test_gen_single_data_uncalibrated(self):
+    def test_gen_single_data_uncalibrated(self) -> None:
         """
         Tests the generation of a single proton image and image that includes the electron
         contribution. The image is not calibrated.
@@ -185,7 +185,7 @@ class TestDataGeneration:
         # that of the proton image alone
         assert np.mean(combined_image.flatten()) >= np.mean(proton_image.flatten())
 
-    def test_gen_single_data_calibrated(self):
+    def test_gen_single_data_calibrated(self) -> None:
         """
         Tests the generation of a synthetic image with pixels calibrated to between
         0-4095.

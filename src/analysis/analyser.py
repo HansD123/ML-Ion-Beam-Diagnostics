@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -33,12 +33,12 @@ class Analyser:
                 " equal to the size of label_titles."
             )
 
-        self.images = images
-        self.true_labels = np.array(true_labels)
-        self.predicted_labels = np.array(predicted_labels)
-        self.label_titles = np.array(label_titles)
+        self.images: list = images
+        self.true_labels: np.ndarray = np.array(true_labels)
+        self.predicted_labels: np.ndarray = np.array(predicted_labels)
+        self.label_titles: np.ndarray = np.array(label_titles)
 
-    def histogram_2d(self):
+    def histogram_2d(self) -> None:
         """Plots 2d histograms of the true labels vs predicted labels."""
 
         for index, title in enumerate(self.label_titles):
@@ -60,7 +60,7 @@ class Analyser:
             plt.ylabel("Predicted value")
             plt.legend()
 
-    def categorise_by_threshold(self, rae_maxes: List):
+    def categorise_by_threshold(self, rae_maxes: List[float]) -> dict:
         """
         Calculates the RAEs and creates new images and binary labels. For each image
         the corresponding binary label is determined by its RAE in relation to the RAE
@@ -85,7 +85,7 @@ class Analyser:
         )
         return images_bin_labels
 
-    def mraes(self):
+    def mraes(self) -> Dict[str, float]:
         """Determines the mean relative absolute errors between lists."""
         errors = {}
         for i, title in enumerate(self.label_titles):

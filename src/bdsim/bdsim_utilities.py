@@ -1,11 +1,12 @@
 import os
 import glob
+from typing import List
 
 # Get the current directory path
 current_file_path = os.path.abspath(__file__)
 current_dir = os.path.dirname(current_file_path)
 
-def create_output_dirs():
+def create_output_dirs() -> None:
     """
     Adds folders for storing temporary BDSIM files required for generating BDSIM
     scripts.
@@ -66,7 +67,7 @@ def clear_bdsim_outputs() -> None:
 def generate_script(
     job_ID: str,
     job_number: int,
-    filter_array: list,
+    filter_array: List[float],
     scintillator_thickness: float,
     filter_width: float,
     pixel_size: int,

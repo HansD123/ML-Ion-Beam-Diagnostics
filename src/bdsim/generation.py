@@ -29,10 +29,10 @@ class BDSIMGenerator:
         Filter_array: list,
         scintillator_thickness: float,
         image_pixel_width: int,
-        Tp_range_electrons: tuple = None,
-        N0_range_electrons: tuple = None,
+        Tp_range_electrons: tuple | None = None,
+        N0_range_electrons: tuple | None = None,
         clear_files: bool = True,
-    ) -> list:
+    ) -> None:
         """
         Initialises BDSIMGenerator:
         class with the following parameters:
@@ -78,7 +78,7 @@ class BDSIMGenerator:
         T: float,
         E_max: float = 0,
         particle_type: str = "proton",
-    ) -> None:
+    ) -> np.ndarray:
         """
         Generates energies from specified beam distribution
         E_max (MeV) is the maximum energy of the beam (irrelevant for electron beams)
@@ -119,7 +119,7 @@ class BDSIMGenerator:
             )
         return energies
 
-    def generate_momenta(self) -> list:
+    def generate_momenta(self) -> List[List[float]]:
         """
         Generates x and y momenta from specified beam distribution
         """
@@ -172,7 +172,7 @@ class BDSIMGenerator:
 
         return np.max(energies) - proton_rest_mass
 
-    def generate_parameters_loop(self, number_of_jobs: int, start: int) -> np.array:
+    def generate_parameters_loop(self, number_of_jobs: int, start: int) -> np.ndarray:
         """
         Loops through the parameter ranges and calls the function generate_particle_file for a series of parameters that are
         randomly generated between the two ranges, for the number of times specified by number_of_jobs
@@ -298,7 +298,7 @@ class BDSIMGenerator:
 
     def extract_grids(
         self, number_of_jobs: int, particle_type: str, start: int
-    ) -> list:
+    ) -> List[np.ndarray]:
         """
         Converts the root histograms into list and outputs them to folder
         bdsim_grids
@@ -333,7 +333,7 @@ class BDSIMGenerator:
 
         return data_list
 
-    def gaussian_blur(self, image) -> np.array:
+    def gaussian_blur(self, image: np.ndarray) -> np.ndarray:
         """
         Applies a guassian blur to the image. Sets sigma to be a thrid of the radius, ie
         the number of pixels that are significant to the blur.
@@ -368,7 +368,7 @@ class BDSIMGenerator:
 
     def generate_proton_image(
         self, job_number: int, Emax: float, Tp: float
-    ) -> np.array:
+    ) -> List[np.ndarray]:
         """
         Generates an image using protons
         """
@@ -378,7 +378,7 @@ class BDSIMGenerator:
         data_proton = self.extract_grids(1, "proton", job_number)
         return data_proton
 
-    def generate_electron_image(self, job_number: int, Tp: float) -> np.array:
+    def generate_electron_image(self, job_number: int, Tp: float) -> List[np.ndarray]:
         """
         Generates an image using electrons
         """
@@ -388,7 +388,7 @@ class BDSIMGenerator:
         data_electron = self.extract_grids(1, "electron", job_number)
         return data_electron
 
-    def generate_single_image(self, job_number: int) -> None:
+    def generate_single_image(self, job_number: int) -> tuple[np.ndarray, np.ndarray]:
         """
         Generates a single image, either with electrons included or without them included
         """
@@ -427,7 +427,7 @@ class BDSIMGenerator:
 
         return {"images": images, "labels": labels}
 
-    def divide_and_distribute(self, number, divisor):
+    def divide_and_distribute(self, number: int, divisor: int) -> List[int]:
         if divisor <= 0:
             return "Error: Divisor must be greater than 0"
 

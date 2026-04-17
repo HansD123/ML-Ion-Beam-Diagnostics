@@ -9,6 +9,8 @@ import pickle
 import os
 import torch
 
+from typing import Any, Dict, List
+import optuna
 from bdsim.generation import BDSIMGenerator
 from machine_learning.pytorch_trial import ml_trial
 import utils
@@ -44,7 +46,7 @@ PIXEL_NO = 30
 CLEAR_FILES = False
 
 
-def generate_data(trial):
+def generate_data(trial: optuna.Trial) -> Dict[str, List]:
     """
     Optimisation of filter thicknesses.
     """
@@ -91,7 +93,7 @@ def generate_data(trial):
     return images_and_labels
 
 
-def objective(trial, best_attributes):
+def objective(trial: optuna.Trial, best_attributes: Dict[str, Any]) -> float:
     """
     Generates a set of synthetic images and labels with filter parameters selected by
     Optuna. Trains a neural network on this dataset of synthetic images and returns the
@@ -133,7 +135,7 @@ def objective(trial, best_attributes):
     return val_loss
 
 
-def main():
+def main() -> None:
     utils.create_output_dirs()
 
     # Deleting any existing dbs with the same name

@@ -11,6 +11,8 @@ import numpy as np
 import optuna
 import pickle
 
+from typing import Any, Dict, List
+import optuna
 from machine_learning.keras_trial import ml_trial
 import custom.filter as fil
 import custom.generation as dg
@@ -45,7 +47,7 @@ electron_filter_thickness_2 = 2
 electron_filter_thickness_3 = 3
 
 
-def generate_data(trial):
+def generate_data(trial: optuna.Trial) -> Dict[str, List]:
     """
     Optimisation of filter attributes.
     y = a*b**x
@@ -95,7 +97,7 @@ def generate_data(trial):
 
 
 
-def objective(trial, best_attributes):
+def objective(trial: optuna.Trial, best_attributes: Dict[str, Any]) -> float:
 
     # Tracking best trial attributes
     best_loss = None
@@ -143,7 +145,7 @@ def objective(trial, best_attributes):
     return loss
 
 
-def main():
+def main() -> None:
     utils.create_output_dirs()
 
     # Deleting any existing dbs with the same name

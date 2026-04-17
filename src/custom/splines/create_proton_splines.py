@@ -1,6 +1,7 @@
 # Importing Modules and NIST datasets
 
 import csv
+from typing import Tuple
 import numpy as np
 from scipy.interpolate import CubicSpline
 import dill
@@ -56,7 +57,7 @@ def create_sc_proton_spline(filepath: str) -> None:
         dill.dump(spline_al, f)
 
 
-def create_al_2d_proton_spline(energy_range: tuple, thickness_range: tuple) -> None:
+def create_al_2d_proton_spline(energy_range: Tuple[float, float], thickness_range: Tuple[float, float]) -> None:
     """
     Loads in aluminium spline, and then defines a function to calculate the energy reamining after a
     proton passes through a specific thickness of aluminium. Uses the range of energies and thicknesses supplied to
@@ -103,7 +104,7 @@ def create_al_2d_proton_spline(energy_range: tuple, thickness_range: tuple) -> N
 
 
 def create_sc_proton_deposited_spline(
-    energy_range: tuple, scintillator_thickness: float
+    energy_range: Tuple[float, float], scintillator_thickness: float
 ) -> None:
     """
     Loads in scintillator PStar spline and defines a function to determine the energy deposited in

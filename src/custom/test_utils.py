@@ -7,7 +7,7 @@ from custom.generation import gen_many_parallel
 from utils import normalise
 
 
-def test_normalise():
+def test_normalise() -> None:
     """Tests the normalisation and denormalisation of images and labels."""
     # Create the image and label to test on
     E_MAX_BOUNDS = (0.1, 5)

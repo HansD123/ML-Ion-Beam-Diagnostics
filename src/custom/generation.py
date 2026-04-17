@@ -1,6 +1,6 @@
 import numpy as np
 import dill
-from typing import List, Dict
+from typing import Dict, List, Tuple
 import random
 from scipy.ndimage import gaussian_filter
 from tqdm import tqdm
@@ -100,8 +100,10 @@ def energy_deposited_electron(initial_energy: float) -> float:
 
 # Data Generation Functions
 def gen_params(
-    E_max_bounds: tuple, T_p_bounds: tuple, macroparticles_bounds: tuple
-) -> tuple:
+    E_max_bounds: Tuple[float, float],
+    T_p_bounds: Tuple[float, float],
+    macroparticles_bounds: Tuple[float, float],
+) -> Tuple[float, float, float]:
     """
     Generates three parameters: Energy, temperature and number of macroparticles
     sampled from a uniform distribution between set bounds.
@@ -114,7 +116,9 @@ def gen_params(
     return E_max, T_p, N0
 
 
-def gen_electron_params(T_p_bounds: tuple, macroparticles_bounds: tuple) -> tuple:
+def gen_electron_params(
+    T_p_bounds: Tuple[float, float], macroparticles_bounds: Tuple[float, float]
+) -> Tuple[float, float]:
     """
     Generates two parameters: Temperature and number of macroparticles sampled
     from a uniform distribution between set bounds.
@@ -164,7 +168,7 @@ def gen_energies_electrons(n_macroparticles: int, T_p: float) -> np.ndarray:
 
 def gen_energies_lists(
     n_deviates: int, n_filters: int, E_max: float, T_p: float
-) -> list:
+) -> List[np.ndarray]:
     """
     Generates a random set of energies and assigns each energy to the list associated with
     the filter number it lands on.
@@ -179,7 +183,7 @@ def gen_energies_lists(
     return [np.array(i) for i in energies_lists]
 
 
-def gen_energies_electrons_lists(n_deviates: int, n_filters: int, T_p: float) -> list:
+def gen_energies_electrons_lists(n_deviates: int, n_filters: int, T_p: float) -> List[np.ndarray]:
     """
     Generates a random set of energies and assigns each energy to the list associated
     with the filter number it lands on (for electrons).
@@ -194,7 +198,7 @@ def gen_energies_electrons_lists(n_deviates: int, n_filters: int, T_p: float) ->
     return [np.array(i) for i in energies_lists]
 
 
-def make_filter_map(thicknesses: list) -> dict:
+def make_filter_map(thicknesses: List[float]) -> Dict[int, float]:
     """
     Returns a dictionary as follows:
     filter number: thickness
@@ -346,14 +350,14 @@ def smooth_squares(arr: np.ndarray, n_filters: int) -> np.ndarray:
 
 
 def gen_single_data(
-    e_max_bounds: tuple,
-    t_p_bounds: tuple,
-    n_particle_bounds: tuple,
+    e_max_bounds: Tuple[float, float],
+    t_p_bounds: Tuple[float, float],
+    n_particle_bounds: Tuple[float, float],
     n_macroparticles: int,
     filter: np.ndarray,
-    filter_map: dict,
+    filter_map: Dict[int, float],
     add_electrons: bool,
-) -> np.ndarray:
+) -> Tuple[np.ndarray, tuple]:
     """
     Generates a simulated data image of the energies deposited in the scintillator
     by the protons and another image for the electrons. Smooths each image separately
@@ -419,12 +423,12 @@ def gen_single_data(
 
 
 def gen_many_data(
-    e_max_bounds: tuple,
-    t_p_bounds: tuple,
-    n_particle_bounds: tuple,
+    e_max_bounds: Tuple[float, float],
+    t_p_bounds: Tuple[float, float],
+    n_particle_bounds: Tuple[float, float],
     n_macroparticles: int,
     filter: np.ndarray,
-    filter_map: dict,
+    filter_map: Dict[int, float],
     n_data: int,
     random_seed: int,
     add_electrons: bool,
@@ -455,7 +459,7 @@ def gen_many_data(
     }
 
 
-def divide_and_distribute(number, divisor):
+def divide_and_distribute(number: int, divisor: int) -> List[int]:
     if divisor <= 0:
         return "Error: Divisor must be greater than 0"
 
@@ -482,12 +486,12 @@ def calibrate_images(images: List[np.ndarray], calibrated_max: int) -> List[np.n
 
 
 def gen_many_parallel(
-    e_max_bounds: tuple,
-    t_p_bounds: tuple,
-    n_particle_bounds: tuple,
+    e_max_bounds: Tuple[float, float],
+    t_p_bounds: Tuple[float, float],
+    n_particle_bounds: Tuple[float, float],
     n_macroparticles: int,
     filter: np.ndarray,
-    filter_map: dict,
+    filter_map: Dict[int, float],
     n_data: int,
     n_workers: int = 1,
     add_electrons: bool = False,
