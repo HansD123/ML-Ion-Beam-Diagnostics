@@ -85,7 +85,7 @@ def energy_after_al_electron(initial_energy: float, thickness: float) -> float:
 def energy_deposited(initial_energy: float) -> float:
     """
     Determines the energy deposited from the initial energy assuming
-    Scintillator thickness: 2e-3 m.
+    Scintillator thickness: 2e-3 cm (20 µm).
     """
     return sc_deposited_spline(initial_energy)
 
@@ -93,7 +93,7 @@ def energy_deposited(initial_energy: float) -> float:
 def energy_deposited_electron(initial_energy: float) -> float:
     """
     Determines the energy deposited from the initial energy assuming
-    Scintillator thickness: 2e-3 m.
+    Scintillator thickness: 2e-3 cm (20 µm).
     """
     return sc_deposited_electron_spline(initial_energy)
 
