@@ -8,7 +8,9 @@ bdsim_outputs/
 bdsim_particle_files/
 bdsim_scripts/
 shared_data/
+prototype/
 /shared_data
+
 
 *.keras
 *.db
