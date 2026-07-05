@@ -99,7 +99,12 @@ class TorchCubicSpline2D:
         self.x = x.to(DTYPE)
         self.y = y.to(DTYPE)
         self.Z = Z.to(DTYPE)
+        # Precompute the second-derivative arrays once (natural BC in both axes):
+        # along x, along y, and the mixed term. Evaluation is then pure gather +
+        # arithmetic with no per-call solve.
         self.Mx = _natural_second_derivs(self.x, self.Z.t().contiguous()).t().contiguous()
+        self.My = _natural_second_derivs(self.y, self.Z)
+        self.Mxy = _natural_second_derivs(self.y, self.Mx)
 
     def __call__(self, xq: torch.Tensor, yq: torch.Tensor) -> torch.Tensor:
         xq = torch.as_tensor(xq, dtype=DTYPE)
@@ -107,31 +112,38 @@ class TorchCubicSpline2D:
         shape = torch.broadcast_shapes(xq.shape, yq.shape)
         xf = xq.expand(shape).reshape(-1).clamp(self.x[0], self.x[-1])
         yf = yq.expand(shape).reshape(-1).clamp(self.y[0], self.y[-1])
-        S = xf.shape[0]
 
-        # Interpolate along x at every y-knot -> g of shape (S, ny).
         ix = (torch.searchsorted(self.x, xf, right=True) - 1).clamp(0, self.x.shape[0] - 2)
-        hx = (self.x[ix + 1] - self.x[ix])[:, None]
-        a = ((self.x[ix + 1] - xf) / hx.squeeze(1))[:, None]
-        b = ((xf - self.x[ix]) / hx.squeeze(1))[:, None]
-        g = (
-            a * self.Z[ix]
-            + b * self.Z[ix + 1]
-            + ((a ** 3 - a) * self.Mx[ix] + (b ** 3 - b) * self.Mx[ix + 1]) * (hx ** 2) / 6.0
-        )
-
-        # Build a spline in y from g and evaluate at yq.
-        My = _natural_second_derivs(self.y, g)
         iy = (torch.searchsorted(self.y, yf, right=True) - 1).clamp(0, self.y.shape[0] - 2)
-        ar = torch.arange(S)
+
+        hx = self.x[ix + 1] - self.x[ix]
+        a = (self.x[ix + 1] - xf) / hx
+        b = (xf - self.x[ix]) / hx
+        ca = (a ** 3 - a) * hx ** 2 / 6.0
+        cb = (b ** 3 - b) * hx ** 2 / 6.0
+
         hy = self.y[iy + 1] - self.y[iy]
         ay = (self.y[iy + 1] - yf) / hy
         by = (yf - self.y[iy]) / hy
-        out = (
-            ay * g[ar, iy]
-            + by * g[ar, iy + 1]
-            + ((ay ** 3 - ay) * My[ar, iy] + (by ** 3 - by) * My[ar, iy + 1]) * (hy ** 2) / 6.0
-        )
+        cay = (ay ** 3 - ay) * hy ** 2 / 6.0
+        cby = (by ** 3 - by) * hy ** 2 / 6.0
+
+        def corners(m):
+            return m[ix, iy], m[ix + 1, iy], m[ix, iy + 1], m[ix + 1, iy + 1]
+
+        z00, z10, z01, z11 = corners(self.Z)
+        mx00, mx10, mx01, mx11 = corners(self.Mx)
+        my00, my10, my01, my11 = corners(self.My)
+        mxy00, mxy10, mxy01, mxy11 = corners(self.Mxy)
+
+        # Interpolate along x: the value and its y-second-derivative at y[j], y[j+1].
+        g_j = a * z00 + b * z10 + ca * mx00 + cb * mx10
+        g_j1 = a * z01 + b * z11 + ca * mx01 + cb * mx11
+        gyy_j = a * my00 + b * my10 + ca * mxy00 + cb * mxy10
+        gyy_j1 = a * my01 + b * my11 + ca * mxy01 + cb * mxy11
+
+        # Interpolate along y using those as the y-second-derivatives.
+        out = ay * g_j + by * g_j1 + cay * gyy_j + cby * gyy_j1
         return out.reshape(shape)
 
     def state(self) -> dict:
