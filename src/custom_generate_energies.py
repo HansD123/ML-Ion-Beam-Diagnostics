@@ -86,7 +86,7 @@ def main() -> None:
     N_PARTICLES_BOUNDS = (1e7, 1e10)
     N_MACROPARTICLES = 25000
     GRID_DIMENSIONS = (30, 30)  # matches Filter(BASE_UNIT, 10, (1, 1)) in custom_generate.py
-    N_SAMPLES = 100
+    N_SAMPLES = 5000
 
     utils.create_output_dirs()
 
@@ -99,7 +99,7 @@ def main() -> None:
         N_PARTICLES_BOUNDS,
     )
 
-    torch.save({"energies": padded, "mask": mask, "labels": labels}, output_path)
+    torch.save({"energies": padded, "mask": mask, "labels": labels, "n_macroparticles": N_MACROPARTICLES}, output_path)
     print(f"Saved energies tensor {tuple(padded.shape)} to {output_path}")
 
 
